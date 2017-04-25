@@ -35,6 +35,9 @@ def setup_options():
     arguments.add_option("--slack-channel", dest="slack_channel", help="Slack channel to message to", type="string")
     arguments.add_option("--slack-username", dest="slack_username", help="Sender's Slack username", type="string")
 
+    arguments.add_option("--telegram-token", dest="telegram_token", help="Telegram bot token", type="string")
+    arguments.add_option("--telegram-chat-id", dest="telegram_chat_id", help="Telegram chat id to message to", type="string")
+
     options = arguments.parse_args()[0]
 
     if options.config_file:
@@ -66,6 +69,8 @@ def setup_options():
         options.slack_url = config.get("Slack", "url")
         options.slack_channel = config.get("Slack", "channel")
         options.slack_username = config.get("Slack", "username")
+        options.telegram_token = config.get("Telegram", "token")
+        options.telegram_chat_id = config.get("Telegram", "chat_id")
 
     return options
 
@@ -89,6 +94,15 @@ def send_notification(options, body):
         slack_payload = '{"channel": "#%s", "username": "%s", "text": "%s"}' % (options.slack_channel, options.slack_username, text_slack)
 
         request = urllib2.Request(options.slack_url, slack_payload)
+        response = urllib2.urlopen(request)
+        response.close()
+
+    if options.telegram_token and options.telegram_chat_id:
+        # escape double quotes from possibly breaking the slack message payload
+        text_telegram = text.replace("\"", "\\\"")
+        telegram_url = 'https://api.telegram.org/%s/sendMessage?chat_id=%s&text=%s' % (options.telegram_token, options.telegram_chat_id, text_telegram)
+
+        request = urllib2.Request(telegram_url)
         response = urllib2.urlopen(request)
         response.close()
 
